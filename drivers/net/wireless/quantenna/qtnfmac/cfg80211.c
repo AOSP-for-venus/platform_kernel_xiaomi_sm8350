@@ -164,7 +164,7 @@ int qtnf_del_virtual_intf(struct wiphy *wiphy, struct wireless_dev *wdev)
 	cancel_work_sync(&vif->high_pri_tx_work);
 
 	if (netdev->reg_state == NETREG_REGISTERED)
-		unregister_netdevice(netdev);
+		cfg80211_unregister_netdevice(netdev);
 
 	if (qtnf_cmd_send_del_intf(vif))
 		pr_err("VIF%u.%u: failed to delete VIF\n", vif->mac->macid,

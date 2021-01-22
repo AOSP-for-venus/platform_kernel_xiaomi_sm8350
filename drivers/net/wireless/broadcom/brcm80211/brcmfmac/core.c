@@ -660,7 +660,7 @@ int brcmf_net_attach(struct brcmf_if *ifp, bool rtnl_locked)
 	INIT_WORK(&ifp->ndoffload_work, _brcmf_update_ndtable);
 
 	if (rtnl_locked)
-		err = register_netdevice(ndev);
+		err = cfg80211_register_netdevice(ndev);
 	else
 		err = register_netdev(ndev);
 	if (err != 0) {
@@ -682,7 +682,7 @@ static void brcmf_net_detach(struct net_device *ndev, bool rtnl_locked)
 {
 	if (ndev->reg_state == NETREG_REGISTERED) {
 		if (rtnl_locked)
-			unregister_netdevice(ndev);
+			cfg80211_unregister_netdevice(ndev);
 		else
 			unregister_netdev(ndev);
 	} else {
