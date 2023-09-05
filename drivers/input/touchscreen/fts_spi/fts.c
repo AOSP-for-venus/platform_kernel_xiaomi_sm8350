@@ -3415,6 +3415,24 @@ static ssize_t fts_fod_area_store(struct device *dev,
 	return count;
 }
 
+#ifdef GESTURE_MODE
+static ssize_t fts_double_tap_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+    return sprintf(buf, "%d\n", fts_info->gesture_enabled);
+}
+
+static ssize_t fts_double_tap_store(struct device *dev, struct device_attribute *attr,
+				    const char *buf, size_t count)
+{
+	struct fts_ts_info *info = dev_get_drvdata(dev);
+
+	sscanf(buf, "%u", &info->gesture_enabled);
+	queue_work(info->event_wq, &info->mode_handler_work);
+
+	return count;
+}
+#endif
+
 #ifdef CONFIG_SECURE_TOUCH
 static void fts_secure_touch_notify (struct fts_ts_info *info)
 {
@@ -3671,6 +3689,8 @@ static DEVICE_ATTR(stylus_mode, (S_IRUGO | S_IWUSR | S_IWGRP),
 #endif
 
 #ifdef GESTURE_MODE
+static DEVICE_ATTR(double_tap, (S_IRUGO | S_IWUSR | S_IWGRP),
+		   fts_double_tap_show, fts_double_tap_store);
 static DEVICE_ATTR(gesture_mask, (S_IRUGO | S_IWUSR | S_IWGRP),
 		   fts_gesture_mask_show, fts_gesture_mask_store);
 static DEVICE_ATTR(gesture_coordinates, (S_IRUGO | S_IWUSR | S_IWGRP),
@@ -8781,6 +8801,12 @@ static int fts_probe(struct spi_device *client)
 	    proc_create("tp_data_dump", 0444, NULL, &fts_datadump_ops);
 	info->tp_fw_version_proc =
 	    proc_create("tp_fw_version", 0444, NULL, &fts_fw_version_ops);
+
+#ifdef GESTURE_MODE
+	error = sysfs_create_file(&info->fts_touch_dev->kobj, &dev_attr_double_tap.attr);
+	if (error)
+		logError(1, "%s ERROR: Failed to create double_tap sysfs group!\n", tag);
+#endif
 
 #ifdef FTS_XIAOMI_TOUCHFEATURE
 	info->touch_feature_wq =
