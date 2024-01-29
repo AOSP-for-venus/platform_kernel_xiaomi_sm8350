@@ -437,6 +437,7 @@ struct fts_ts_info {
 	bool probe_ok;
 	struct mutex charge_lock;
 	int nonui_status;
+	int single_tap_pressed;
 };
 
 int fts_chip_powercycle(struct fts_ts_info *info);
