@@ -1,3 +1,5 @@
+TARGET_PRODUCT := venus
+
 # auto-detect subdirs
 ifneq ($(CONFIG_ARCH_QTI_VM), y)
 ifeq ($(CONFIG_QTI_QUIN_GVM), y)
