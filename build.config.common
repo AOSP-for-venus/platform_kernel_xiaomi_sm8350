@@ -1,8 +1,12 @@
 BRANCH=android11-5.4
 KMI_GENERATION=2
 
+if [ -z $CLANG_VERSION ]; then
+	CLANG_VERSION=r416183b
+fi
+
 LLVM=1
-CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-r416183b/bin
+CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-${CLANG_VERSION}/bin
 DEPMOD=depmod
 BUILDTOOLS_PREBUILT_BIN=build/build-tools/path/linux-x86
 MKDTBO_EXT=${ROOT_DIR}/tools/libufdt/utils/src/mkdtboimg.py
