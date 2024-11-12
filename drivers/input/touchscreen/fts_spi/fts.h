@@ -425,7 +425,7 @@ struct fts_ts_info {
 	char *data_dump_buf;
 	short strength_buf[PAGE_SIZE];
 	struct tp_frame thp_frame;
-	int aod_status;
+	bool singletap_gesture_enabled;
 	bool tp_pm_suspend;
 	struct completion pm_resume_completion;
 	bool gamemode_enable;
