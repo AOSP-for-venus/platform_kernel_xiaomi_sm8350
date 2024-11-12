@@ -4539,6 +4539,7 @@ static void fts_gesture_event_handler(struct fts_ts_info *info,
 			input_sync(info->input_dev);
 			input_report_key(info->input_dev, KEY_GOTO, 0);
 			input_sync(info->input_dev);
+			notify_gesture_single_tap();
 			info->sleep_finger = 0;
 			info->fod_overlap = 0;
 			info->fod_pressed = false;
