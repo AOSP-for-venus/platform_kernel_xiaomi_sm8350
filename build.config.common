@@ -6,7 +6,7 @@ if [ -z $CLANG_VERSION ]; then
 fi
 
 LLVM=1
-CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-${CLANG_VERSION}/bin
+CLANG_PREBUILT_BIN=prebuilts/clang/host/linux-x86/clang-${CLANG_VERSION}/bin
 DEPMOD=depmod
 BUILDTOOLS_PREBUILT_BIN=build/build-tools/path/linux-x86
 MKDTBO_EXT=${ROOT_DIR}/tools/libufdt/utils/src/mkdtboimg.py
