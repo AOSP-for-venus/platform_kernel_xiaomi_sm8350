@@ -45,3 +45,19 @@ function menuconfig() {
 	mv ${OUT_DIR}/defconfig ${KERNEL_DIR}/arch/${ARCH}/configs/${DEFCONFIG}
 }
 export -f menuconfig
+
+################################################################################
+## Generate modules.load
+if [ -e "${KERNEL_DIR}/modules.list.${CONFIG_TARGET}" ]; then
+  MODULES_LIST=${KERNEL_DIR}/modules.list.${CONFIG_TARGET}
+  module_list_flag="-f ${MODULES_LIST}"
+else
+  module_list_flag="-e ''"
+fi
+
+function generate_modules_load() {
+  (cd "${MODULES_STAGING_DIR}/lib/modules/" && find -type f -name "*.ko" -printf "%f\n") | \
+    grep -w -v ${module_list_flag} - > ${MODULES_STAGING_DIR}/modules.load
+}
+
+append_cmd DIST_CMDS 'generate_modules_load'
