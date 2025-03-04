@@ -615,12 +615,13 @@ static int ram_f0_cali(struct aw_haptic *aw_haptic)
 static void pm_qos_enable(struct aw_haptic *aw_haptic, bool enable)
 {
 	if (enable) {
-		if (!cpu_latency_qos_request_active(&aw_haptic->aw_pm_qos_req_vb))
-			cpu_latency_qos_add_request(&aw_haptic->aw_pm_qos_req_vb,
-						    CPU_LATENCY_QOC_VALUE);
+		if (!pm_qos_request_active(&aw_haptic->aw_pm_qos_req_vb))
+			pm_qos_add_request(&aw_haptic->aw_pm_qos_req_vb,
+					   PM_QOS_CPU_DMA_LATENCY,
+					   AW_PM_QOS_VALUE_VB);
 	} else {
-		if (cpu_latency_qos_request_active(&aw_haptic->aw_pm_qos_req_vb))
-			cpu_latency_qos_remove_request(&aw_haptic->aw_pm_qos_req_vb);
+		if (pm_qos_request_active(&aw_haptic->aw_pm_qos_req_vb))
+			pm_qos_remove_request(&aw_haptic->aw_pm_qos_req_vb);
 	}
 }
 
