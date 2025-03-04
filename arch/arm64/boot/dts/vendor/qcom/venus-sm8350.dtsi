@@ -308,52 +308,29 @@ And public attribution of xiaomi platforms(like J2 and so and)
 
 &qupv3_se6_i2c {
 	status = "ok";
-	aw8697_haptic@5A {
-		compatible = "awinic,aw8697_haptic";
+	haptic_hv@5A {
+		compatible = "awinic,haptic_hv";
 		reg = <0x5a>;
 		reset-gpio = <&tlmm 155 0>;
 		irq-gpio = <&tlmm 119 0>;
-		vib_mode = < 0 >;   /*mode:   RAM mode->0; CONT mode -> 1*/
-		vib_f0_pre = < 1700 >;
-		vib_f0_cali_percen = < 7 >;
-		vib_cont_drv_lev = < 73 >;
-		vib_cont_drv_lvl_ov = < 73 >;
-		vib_cont_td = < 0xf06c >;
-		vib_cont_zc_thr = < 0x08f8 >;  /*hq 0x08F8 */
-		vib_cont_num_brk = < 3 >;
-		vib_f0_coeff = < 260 >; /*Don't modify it    2.604167*/
-		vib_f0_trace_parameter = < 9 3 1 31 >;
-		vib_bemf_config = < 0 0x08 0x03 0xf8 >;
-		vib_sw_brake = < 0x2c >;
-		vib_tset = < 0x12 >;
-		vib_r_spare = < 0x68 >;
-		vib_bstdbg = < 0x30 0xeb 0xd4 0 0 0 >;
-		vib_effect_id_boundary = < 10 >;
-		vib_effect_max = < 192 >;   /*vib_effect_max must bigger than vib_effect_id*/
-		vib_trig_config = < 0 1 0 1 2
+		mode = < 1 >;   /*mode:   RAM mode->0; CONT mode -> 1*/
+		f0_pre = < 1700 >;
+		aw869x_f0_cali_percent = /bits/ 8 < 7 >;
+		aw869x_cont_drv_lev = /bits/ 8 < 73 >;
+		aw869x_cont_drv_lvl_ov = /bits/ 8 < 73 >;
+		aw869x_cont_td = < 0xf06c >;
+		aw869x_cont_zc_thr = < 0x08f8 >;  /*hq 0x08F8 */
+		aw869x_cont_num_brk = /bits/ 8 < 3 >;
+		aw869x_f0_coeff = < 260 >; /*Don't modify it    2.604167*/
+		aw869x_f0_trace_parameter = /bits/ 8 < 9 3 1 31 >;
+		aw869x_bemf_config = /bits/ 8 < 0 0x08 0x03 0xf8 >;
+		aw869x_tset = /bits/ 8 < 0x12 >;
+		aw869x_r_spare = /bits/ 8 < 0x68 >;
+		aw869x_bstdbg = /bits/ 8 < 0x30 0xeb 0xd4 0 0 0 >;
+		aw869x_trig_config = /bits/ 8 < 0 1 0 1 2
 						0 1 0 1 2
 						0 1 0 1 2 >;
-		vib_bst_vol_default = < 0x14 >;
-		vib_bst_vol_ram = < 0x14 >;
-		vib_bst_vol_rtp = < 0x14 >;
-		vib_rtp_time = < 20 20 20 20 20 20 20 20 20000 15000
-				 15000 20000 25000 15000 30000 25000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 20000 20000 20000 20000 20000
-				 20000 20000 20000 20000 20000 >;
+		aw869x_bst_vol_default = < 8000 >;  /* ??? */
 		pinctrl-names = "aw8697_reset_reset","aw8697_reset_active","aw8697_interrupt_active";
 		pinctrl-0 = <&aw8697_gpio_reset>;
 		pinctrl-1 = <&aw8697_gpio_reset_output_high>;
@@ -361,83 +338,53 @@ And public attribution of xiaomi platforms(like J2 and so and)
 		status = "ok";
 		wf_0 {
 			/*CLICK*/
-			qcom,effect-id = <0>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [3e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <0>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_1 {
 			/*DOUBLE CLICK*/
-			qcom,effect-id = <1>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [7e 3e];
-			qcom,wf-brake-pattern = [03 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <1>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_2 {
 			/*TICK*/
-			qcom,effect-id = <2>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [7e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <2>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_3 {
 			/*THUD*/
-			qcom,effect-id = <3>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [3e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <3>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_4 {
 			/*POP*/
-			qcom,effect-id = <4>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [3e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <28000>;
+			awinic,effect-id = <4>;
+			awinic,wf-play-rate-us = <28000>;
 		};
 		wf_5 {
 			/*HEAVY CLICK*/
-			qcom,effect-id = <5>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [7e 7e 7e];
-			qcom,wf-brake-pattern = [03 03 01 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <5>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_6 {
 			/*id 6*/
-			qcom,effect-id = <6>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [3e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <6>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_7 {
 			/*id 7*/
-			qcom,effect-id = <7>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [3e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <7>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_8 {
 			/*id 8*/
-			qcom,effect-id = <8>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [3e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <8>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 		wf_9 {
 			/*id 9*/
-			qcom,effect-id = <9>;
-			qcom,wf-vmax-mv = <3600>;
-			qcom,wf-pattern = [3e 3e];
-			qcom,wf-brake-pattern = [02 01 00 00];
-			qcom,wf-play-rate-us = <20000>;
+			awinic,effect-id = <9>;
+			awinic,wf-play-rate-us = <20000>;
 		};
 	};
 };
