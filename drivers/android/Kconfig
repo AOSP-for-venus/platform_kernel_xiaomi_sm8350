@@ -65,4 +65,6 @@ config ANDROID_VENDOR_HOOKS
 
 endif # if ANDROID
 
+source "drivers/android/wonder/Kconfig"
+
 endmenu

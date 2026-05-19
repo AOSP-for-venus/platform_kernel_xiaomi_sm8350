@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Google Wonder WiFi Virtual Device Driver
+#
+
+config ANDROID_WONDER
+	tristate "Wonder WiFi virtual device driver"
+	depends on MAC80211
+	depends on AUXILIARY_BUS
+	help
+	  This enables support for the Google Wonder WiFi Virtual Device
+	  Driver. This driver provides a virtual interface for interacting with
+	  Wonder WiFi hardware. Select this if you need to use the Wonder WiFi
+	  functionality for testing, development, or specific Wonder-based
+	  applications. It allows for simulation and control of WiFi
+	  operations.
+
+	  To build this as a module, choose m.
+
+config ANDROID_WONDER_TX_DEBUG
+	bool "Wonder TX Debug Message Support"
+	help
+	  This enables detailed debug messages for the transmit path in the
+	  Wonder driver, including packet hex dumps and flow tracing.
+	  Use this option when diagnosing transmission errors, latency issues,
+	  or unexpected packet drops in the Wonder virtual interface.
+
+config ANDROID_WONDER_RX_DEBUG
+	bool "Wonder RX Debug Message Support"
+	help
+	  This enables detailed debug messages for the receive path in the
+	  Wonder driver, including packet hex dumps and filtering results.
+	  Use this option when investigating reception issues, frame corruption,
+	  or filter matching logic in the Wonder virtual interface.
+
+config ANDROID_WONDER_RX_FILTER_SUPPORT
+	bool "Wonder RX Filter Support"
+	help
+	  This enables support for hardware-accelerated RX filtering in the
+	  Wonder driver, allowing the device to drop unwanted frames before
+	  they reach the host networking stack.
+	  Reduces host CPU load by avoiding unnecessary kernel wakeups.
+
