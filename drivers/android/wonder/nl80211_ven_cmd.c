@@ -281,6 +281,29 @@ static bool wonder_tx_rate_sanity_check(u32 preamble, u32 bw, u32 gi, u8 nss, u8
 			pr_warn("Invalid GI %u (VHT only support 0.8 or 0.4)\n", gi);
 			return false;
 		}
+	} else if (preamble == WONDERTAP_RATE_PREAMBLE_HE) {
+		/* HE (802.11ax) max 160MHz and max 8 NSS */
+		if (bw > WONDERTAP_RATE_BW_160) {
+			pr_warn("HE: Invalid BW %u (Max 160MHz)\n", bw);
+			return false;
+		}
+
+		if (nss < 1 || nss > 8) {
+			pr_warn("HE: Invalid NSS %u (Max 8)\n", nss);
+			return false;
+		}
+
+		/* HE MCS max 11 (1024-QAM) */
+		if (mcs > 11) {
+			pr_warn("HE: Invalid MCS %u (Max 11)\n", mcs);
+			return false;
+		}
+
+		if (gi == WONDERTAP_RATE_GI_SHORT || gi > WONDERTAP_RATE_GI_3_2_US) {
+			pr_warn("HE: Invalid GI %u (Expected Default, 0.8us, 1.6us, 3.2us)\n",
+				gi);
+			return false;
+		}
 	} else {
 		pr_err("Unsupported preamble type: %u\n", preamble);
 		return false;
