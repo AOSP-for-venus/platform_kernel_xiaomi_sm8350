@@ -25,6 +25,13 @@
 #define WONDER_JP_CHANNEL 44
 #define WONDER_NORMAL_MODE_MTU_SIZE 8000
 
+struct wonder_stats {
+	u64 tx_entry_cnt;
+	u64 tx_success_cnt;
+	u64 rx_entry_cnt;
+	u64 rx_to_mac_cnt;
+};
+
 struct wonder_data {
 	struct ieee80211_hw *hw;
 	struct ieee80211_vif *vif;
@@ -47,6 +54,7 @@ struct wonder_data {
 	struct work_struct pdev_down_work;
 	struct notifier_block netdev_notifier;
 	struct delayed_work tx_work;
+	struct wonder_stats stats;
 };
 
 #endif /* __WONDER_CORE_H__ */

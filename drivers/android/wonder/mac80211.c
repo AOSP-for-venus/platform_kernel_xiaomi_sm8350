@@ -117,6 +117,7 @@ static rx_handler_result_t wonder_rx_80211_frame(struct wonder_data *wonder, str
 		dev_sw_netstats_rx_add(vdev, skb->len);
 		vdev->stats.rx_packets++;
 		vdev->stats.rx_bytes += skb->len;
+		wonder->stats.rx_to_mac_cnt++;
 	}
 	/* Pass the raw 802.11 frame into the mac80211 processing pipeline. */
 	/* mac80211 now handles de-AMSDU, 802.11 -> 802.3 conversion, and netif_rx(). */
@@ -446,6 +447,7 @@ static rx_handler_result_t wonder_rx_adhoc_handler(struct wonder_data *wonder,
 		print_hex_dump(KERN_DEBUG, "wonder_rx_frame: ", DUMP_PREFIX_NONE, 16, 1,
 			       skb->data, skb->len, false);
 	}
+	wonder->stats.rx_to_mac_cnt++;
 	ieee80211_rx_ni(wonder->hw, skb);
 	return RX_HANDLER_CONSUMED;
 drop:
@@ -461,6 +463,8 @@ static rx_handler_result_t wonder_rx_handler(struct sk_buff **pskb)
 {
 	struct sk_buff *skb = *pskb;
 	struct wonder_data *wonder = rcu_dereference(skb->dev->rx_handler_data);
+
+	wonder->stats.rx_entry_cnt++;
 
 	if (IS_ENABLED(CONFIG_ANDROID_WONDER_RX_DEBUG))
 		pr_err("%s(): receiv packet from pdev %s.\n", __func__, skb->dev->name);
@@ -552,6 +556,7 @@ static void wonder_tx(struct ieee80211_hw *hw,
 	struct wonder_txd *txd;
 	unsigned int room = skb_headroom(skb);
 
+	wonder->stats.tx_entry_cnt++;
 	if (unlikely(!pdev) || unlikely(!vdev)) {
 		pr_err("Physical device is not exist, dropping packet.\n");
 		goto drop;
@@ -618,6 +623,7 @@ static void wonder_tx(struct ieee80211_hw *hw,
 		dev_sw_netstats_tx_add(vdev, 1, skb->len);
 		vdev->stats.tx_packets++;
 		vdev->stats.tx_bytes += skb->len;
+		wonder->stats.tx_success_cnt++;
 		/* Call the physical device's transmit handler */
 		dev_queue_xmit(skb);
 	}
@@ -796,6 +802,7 @@ static void wonder_wake_tx_queue(struct ieee80211_hw *hw,
 					 usecs_to_jiffies(wonder->amsdu_delay));
 		}
 	} else {
+		/* Disable bottom-halves during dequeue to prevent mac80211 dequeue warnings */
 		wonder_handle_tx_queue(hw, txq->ac);
 	}
 }
@@ -915,9 +922,11 @@ static bool wonder_amsdu_sanity(struct ieee80211_hw *hw,
 					     struct sk_buff *head,
 					     struct sk_buff *skb)
 {
+	struct wonder_data *wonder = hw->priv;
+
 	if (IS_ENABLED(CONFIG_ANDROID_WONDER_TX_DEBUG))
 		pr_debug("TX AMSDU sanity check.\n");
-	return true;
+	return wonder->amsdu_enable;
 }
 
 static int wonder_ampdu_action(struct ieee80211_hw *hw,
@@ -1190,6 +1199,7 @@ void *wonder_mac80211_init(void)
 	ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
 	/* Support AMPDU */
 	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
+
 	/*
 	 * NO_AUTO_VIF is set, so the kernel won't create a default interface.
 	 * Interfaces must now be created manually.

@@ -268,6 +268,50 @@ static int wonder_version_show(struct seq_file *m, void *v)
 
 DEFINE_SHOW_ATTRIBUTE(wonder_version);
 
+static int wonder_stats_show(struct seq_file *m, void *v)
+{
+	struct wonder_data *wonder = m->private;
+
+	seq_printf(m, "--- Wonder Driver Stats ---\n");
+	seq_printf(m, "wonder_tx_entry_cnt:            %llu\n", wonder->stats.tx_entry_cnt);
+	seq_printf(m, "wonder_tx_success_cnt:          %llu\n\n", wonder->stats.tx_success_cnt);
+
+	seq_printf(m, "wonder_rx_entry_cnt:            %llu (receiv from wondertap0)\n",
+		   wonder->stats.rx_entry_cnt);
+	seq_printf(m, "wonder_rx_to_mac_cnt:           %llu (forward to mac80211)\n\n",
+		   wonder->stats.rx_to_mac_cnt);
+
+	return 0;
+}
+
+static ssize_t wonder_stats_write(struct file *file, const char __user *user_buf,
+				  size_t count, loff_t *ppos)
+{
+	struct seq_file *m = file->private_data;
+	struct wonder_data *wonder = m->private;
+
+	/* Reset Wonder internal counters */
+	wonder->stats.tx_entry_cnt = 0;
+	wonder->stats.tx_success_cnt = 0;
+	wonder->stats.rx_entry_cnt = 0;
+	wonder->stats.rx_to_mac_cnt = 0;
+
+	return count;
+}
+
+static int wonder_stats_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, wonder_stats_show, inode->i_private);
+}
+
+static const struct file_operations wonder_stats_fops = {
+	.open = wonder_stats_open,
+	.read = seq_read,
+	.write = wonder_stats_write,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
 void wonder_debugfs_init(void *wonder)
 {
 	struct dentry *wonder_debugfs_root;
@@ -285,6 +329,8 @@ void wonder_debugfs_init(void *wonder)
 			    wonder, &wonder_station_query_fops);
 	debugfs_create_file("version", 0444, wonder_debugfs_root,
 			    wonder, &wonder_version_fops);
+	debugfs_create_file("stats", 0644, wonder_debugfs_root,
+			    wonder, &wonder_stats_fops);
 	debugfs_create_bool("amsdu_enable", 0644, wonder_debugfs_root,
 			    &((struct wonder_data *)wonder)->amsdu_enable);
 	debugfs_create_bool("ampdu_enable", 0644, wonder_debugfs_root,
