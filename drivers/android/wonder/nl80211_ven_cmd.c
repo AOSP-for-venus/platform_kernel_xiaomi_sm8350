@@ -475,7 +475,7 @@ static int wonder_vendor_cmd_get_cap(struct wiphy *wiphy,
 	}
 
 	hbs_support = cap.bits.hbs_support;
-	nss = cap.bits.nss + 1;
+	nss = cap.bits.nss;
 	hw_amsdu = cap.bits.amsdu_aggregation;
 	hw_ampdu = cap.bits.ampdu_aggregation;
 	ch_hopping = cap.bits.channel_hopping;
