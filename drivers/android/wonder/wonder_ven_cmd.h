@@ -299,6 +299,8 @@ enum wonder_vendor_feature_attr {
 enum wonder_vendor_feature_id {
 	WONDER_FEATURE_CHANNEL_HOPPING = 0,
 	WONDER_FEATURE_AMSDU = 1,
+	WONDER_FEATURE_AMPDU = 2,
+	WONDER_FEATURE_RA = 3,
 };
 
 #endif /* WONDER_VEN_CMD_H */

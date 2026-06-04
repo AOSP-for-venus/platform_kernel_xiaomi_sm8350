@@ -335,6 +335,10 @@ void wonder_debugfs_init(void *wonder)
 			    &((struct wonder_data *)wonder)->amsdu_enable);
 	debugfs_create_bool("ampdu_enable", 0644, wonder_debugfs_root,
 			    &((struct wonder_data *)wonder)->ampdu_enable);
+	debugfs_create_bool("channel_hopping_enable", 0644, wonder_debugfs_root,
+			    &((struct wonder_data *)wonder)->channel_hopping_enable);
+	debugfs_create_bool("ra_enable", 0644, wonder_debugfs_root,
+			    &((struct wonder_data *)wonder)->ra_enable);
 	debugfs_create_u32("amsdu_threshold", 0644, wonder_debugfs_root,
 			    &((struct wonder_data *)wonder)->amsdu_threshold);
 	debugfs_create_u32("amsdu_delay", 0644, wonder_debugfs_root,
