@@ -650,18 +650,26 @@ static int wonder_start(struct ieee80211_hw *hw)
 
 	pr_debug("wondertap version: %u\n", wonder->wondertap_data.cap.version);
 	pr_debug("wondertap capabilities: 0x%X\n", wonder->wondertap_data.cap.raw_bits);
-	init_params->ampdu_enable = wonder->wondertap_data.cap.bits.ampdu_aggregation;
-	init_params->rate_adaptation_enable =
-		wonder->wondertap_data.cap.bits.rate_adaptation;
 
-	/* Fall back to hardware capabilities if not explicitly set by upper layer */
+	/* AMSDU logic */
 	init_params->amsdu_enable =
-		(wonder->wondertap_data.cache_flags & WONDERTAP_CACHE_AMSDU_SET) ?
-		wonder->amsdu_enable : wonder->wondertap_data.cap.bits.amsdu_aggregation;
+		wonder->amsdu_enable && wonder->wondertap_data.cap.bits.amsdu_aggregation;
+	wonder->amsdu_enable = init_params->amsdu_enable;
 
+	/* Channel Hopping logic */
 	init_params->channel_hopping_enable =
-		(wonder->wondertap_data.cache_flags & WONDERTAP_CACHE_CHANNEL_HOPPING_SET) ?
-		wonder->channel_hopping_enable : wonder->wondertap_data.cap.bits.channel_hopping;
+		wonder->channel_hopping_enable && wonder->wondertap_data.cap.bits.channel_hopping;
+	wonder->channel_hopping_enable = init_params->channel_hopping_enable;
+
+	/* AMPDU logic */
+	init_params->ampdu_enable =
+		wonder->ampdu_enable && wonder->wondertap_data.cap.bits.ampdu_aggregation;
+	wonder->ampdu_enable = init_params->ampdu_enable;
+
+	/* Rate Adaptation logic */
+	init_params->rate_adaptation_enable =
+		wonder->ra_enable && wonder->wondertap_data.cap.bits.rate_adaptation;
+	wonder->ra_enable = init_params->rate_adaptation_enable;
 
 	ret = wondertap_init(&wonder->wondertap_data, init_params);
 	if (ret) {
@@ -937,10 +945,12 @@ static int wonder_ampdu_action(struct ieee80211_hw *hw,
 			    struct ieee80211_vif *vif,
 			    struct ieee80211_ampdu_params *params)
 {
-	struct wonder_data *wonder = hw->priv;
-
-	if (!wonder->ampdu_enable)
-		return -EOPNOTSUPP;
+	/* 
+         * TODO: Vendors currently fully offload AMPDU to firmware, so these actions 
+         * aren't needed yet. Since some vendor plan to use the mac80211 AMPDU flow 
+         * (which is still being discussed), added a TODO and an early return for now.
+         */
+	return -EOPNOTSUPP;
 
 	switch (params->action) {
 	case IEEE80211_AMPDU_TX_START:
@@ -1172,8 +1182,9 @@ void *wonder_mac80211_init(void)
 	wonder->config_filters = 0;
 
 	wonder->ampdu_enable = false;
-	wonder->amsdu_enable = false;
+	wonder->amsdu_enable = true;
 	wonder->channel_hopping_enable = false;
+	wonder->ra_enable = false;
 	wonder->amsdu_threshold = 8000;
 	wonder->amsdu_delay = 3000;
 	wonder->workqueue = create_singlethread_workqueue(DRV_NAME);

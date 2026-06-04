@@ -28,8 +28,6 @@ enum wondertap_state {
 #define WONDERTAP_CACHE_TX_RATE_SET      (1 << 1)
 #define WONDERTAP_CACHE_BSSID_SET        (1 << 2)
 #define WONDERTAP_CACHE_COUNTRY_CODE_SET (1 << 3)
-#define WONDERTAP_CACHE_CHANNEL_HOPPING_SET (1 << 4)
-#define WONDERTAP_CACHE_AMSDU_SET        (1 << 5)
 
 struct wonder_sta_update_work {
 	struct work_struct work;

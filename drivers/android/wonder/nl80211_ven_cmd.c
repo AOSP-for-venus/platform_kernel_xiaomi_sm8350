@@ -893,11 +893,15 @@ static int wonder_vendor_cmd_set_features(struct wiphy *wiphy,
 	switch (feature_id) {
 	case WONDER_FEATURE_CHANNEL_HOPPING:
 		wonder->channel_hopping_enable = enable;
-		wonder->wondertap_data.cache_flags |= WONDERTAP_CACHE_CHANNEL_HOPPING_SET;
 		break;
 	case WONDER_FEATURE_AMSDU:
 		wonder->amsdu_enable = enable;
-		wonder->wondertap_data.cache_flags |= WONDERTAP_CACHE_AMSDU_SET;
+		break;
+	case WONDER_FEATURE_AMPDU:
+		wonder->ampdu_enable = enable;
+		break;
+	case WONDER_FEATURE_RA:
+		wonder->ra_enable = enable;
 		break;
 	default:
 		pr_err("Unknown feature ID: %u\n", feature_id);
