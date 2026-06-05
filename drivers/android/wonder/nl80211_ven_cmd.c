@@ -456,7 +456,7 @@ static int wonder_vendor_cmd_get_cap(struct wiphy *wiphy,
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
 	struct wonder_data *wonder = hw->priv;
 	struct sk_buff *skb;
-	const size_t reply_skb_size = sizeof(u32) + sizeof(u8) * 5;
+	const size_t reply_skb_size = sizeof(u32) + sizeof(u8) * 6;
 	struct wondertap_capability cap;
 	bool is_monitor_mode = (wdev && wdev->iftype == NL80211_IFTYPE_MONITOR) ? true : false;
 	u32 mtu_size = is_monitor_mode ? INT_MAX : WONDER_NORMAL_MODE_MTU_SIZE;
@@ -464,6 +464,7 @@ static int wonder_vendor_cmd_get_cap(struct wiphy *wiphy,
 	u8 nss;
 	u8 hw_amsdu;
 	u8 hw_ampdu;
+	u8 hw_ra;
 	u8 ch_hopping;
 	int ret;
 
@@ -478,11 +479,13 @@ static int wonder_vendor_cmd_get_cap(struct wiphy *wiphy,
 	nss = cap.bits.nss;
 	hw_amsdu = cap.bits.amsdu_aggregation;
 	hw_ampdu = cap.bits.ampdu_aggregation;
+	hw_ra = cap.bits.rate_adaptation;
 	ch_hopping = cap.bits.channel_hopping;
 
-	pr_debug("Handling monitor_mode: %d, MTU: %u, HW_AMSDU: %u, HW_AMPDU: %u, CH_HOPPING: %u, HBS_SUPPORT: %u, NSS: %u\n",
-		 is_monitor_mode, mtu_size, hw_amsdu, hw_ampdu, ch_hopping,
-		 hbs_support, nss);
+	pr_debug("Handling is_monitor_mode: %d, MTU: %u, HW_AMSDU: %u, HW_AMPDU: %u, HW_RA: %u, "
+		"CH_HOPPING: %u, HBS_SUPPORT: %u, NSS: %u\n",
+		is_monitor_mode, mtu_size, hw_amsdu, hw_ampdu, hw_ra,
+		ch_hopping, hbs_support, nss);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, nla_total_size(reply_skb_size));
 	if (!skb) {
@@ -505,6 +508,12 @@ static int wonder_vendor_cmd_get_cap(struct wiphy *wiphy,
 
 	if (nla_put(skb, WONDER_VEN_ATTR_CAP_HW_AMPDU, sizeof(u8), &hw_ampdu)) {
 		pr_err("Failed to put CAP HW_AMPDU attribute\n");
+		kfree_skb(skb);
+		return -EMSGSIZE;
+	}
+
+	if (nla_put(skb, WONDER_VEN_ATTR_CAP_HW_RA, sizeof(u8), &hw_ra)) {
+		pr_err("Failed to put CAP HW_RA attribute\n");
 		kfree_skb(skb);
 		return -EMSGSIZE;
 	}
