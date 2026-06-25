@@ -769,8 +769,10 @@ static void wonder_flush_worker(struct work_struct *work)
 	int ac;
 
 	/* Flush all AC queues */
+	local_bh_disable();
 	for (ac = 0; ac < NL80211_NUM_ACS; ac++)
 		wonder_handle_tx_queue(hw, ac);
+	local_bh_enable();
 }
 
 static void wonder_wake_tx_queue(struct ieee80211_hw *hw,
@@ -803,7 +805,9 @@ static void wonder_wake_tx_queue(struct ieee80211_hw *hw,
 		}
 	} else {
 		/* Disable bottom-halves during dequeue to prevent mac80211 dequeue warnings */
+		local_bh_disable();
 		wonder_handle_tx_queue(hw, txq->ac);
+		local_bh_enable();
 	}
 }
 
