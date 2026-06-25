@@ -1200,6 +1200,8 @@ void *wonder_mac80211_init(void)
 	/* Support AMPDU */
 	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
 
+	/* Tell mac80211 that RX frames include FCS so it trims them correctly */
+	ieee80211_hw_set(hw, RX_INCLUDES_FCS);
 	/*
 	 * NO_AUTO_VIF is set, so the kernel won't create a default interface.
 	 * Interfaces must now be created manually.
