@@ -1199,7 +1199,7 @@ void *wonder_mac80211_init(void)
 	ieee80211_hw_set(hw, SUPPORT_FAST_XMIT);
 	/* Support AMPDU */
 	ieee80211_hw_set(hw, AMPDU_AGGREGATION);
-
+	ieee80211_hw_set(hw, TX_AMPDU_SETUP_IN_HW);
 	/* Tell mac80211 that RX frames include FCS so it trims them correctly */
 	ieee80211_hw_set(hw, RX_INCLUDES_FCS);
 	/*
