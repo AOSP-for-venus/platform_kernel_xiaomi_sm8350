@@ -101,6 +101,7 @@ static void wonder_remove(struct auxiliary_device *adev)
 
 static const struct auxiliary_device_id wonder_aux_id_table[] = {
 	{ .name = "bcmdhd4390.wondertap" },
+	{ .name = "wlan.wondertap" },
 	{},
 };
 MODULE_DEVICE_TABLE(auxiliary, wonder_aux_id_table);

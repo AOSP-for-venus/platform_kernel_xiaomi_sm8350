@@ -2016,6 +2016,67 @@ int hdd_indicate_tsf(struct hdd_adapter *adapter, uint32_t *buf, int len)
 	return __hdd_indicate_tsf(adapter, buf, len);
 }
 
+/**
+ * hdd_tsf_get_sync() - synchronously capture and return the current TSF
+ * @adapter: adapter to query
+ * @tsf: output, the captured 64-bit TSF value
+ *
+ * Wraps the exact same capture -> wait -> indicate sequence used by
+ * QCA_TSF_SYNC_GET in __wlan_hdd_cfg80211_handle_tsf_cmd() below, as a
+ * plain function other driver code (e.g. wondertap) can call directly
+ * instead of only reachable via the vendor command path.
+ *
+ * hdd_tsf_check_conn_state() (called inside hdd_capture_tsf()) only
+ * actively rejects QDF_STA_MODE/QDF_P2P_CLIENT_MODE (not associated) and
+ * QDF_SAP_MODE/QDF_P2P_GO_MODE (not beaconing); other device_modes,
+ * including QDF_MONITOR_MODE, fall through and are allowed.
+ *
+ * CAUTION: tsf_sync_get_completion_evt above is a single file-scope
+ * completion, shared with any other in-flight QCA_TSF_SYNC_GET /
+ * hdd_capture_tsf() caller on *any* adapter -- not per-adapter. A
+ * concurrent caller (e.g. a STA doing normal TSF-PTP sync at the same
+ * moment) can race with this function on that completion. This wrapper
+ * does not add locking around that race; add it if concurrent use is a
+ * real possibility on your tree.
+ *
+ * Return: 0 on success, negative errno on failure/timeout
+ */
+int hdd_tsf_get_sync(struct hdd_adapter *adapter, uint64_t *tsf)
+{
+	uint32_t tsf_op_resp[3] = {0};
+	int ret;
+
+	if (!adapter || !tsf)
+		return -EINVAL;
+
+	hdd_capture_tsf(adapter, tsf_op_resp, 1);
+	switch (tsf_op_resp[0]) {
+	case TSF_RETURN:
+		break;
+	case TSF_CURRENT_IN_CAP_STATE:
+		return -EALREADY;
+	case TSF_STA_NOT_CONNECTED_NO_TSF:
+	case TSF_SAP_NOT_STARTED_NO_TSF:
+		return -EPERM;
+	case TSF_NOT_READY:
+		return -EAGAIN;
+	default:
+		return -EINVAL;
+	}
+
+	ret = wait_for_completion_timeout(&tsf_sync_get_completion_evt,
+					   msecs_to_jiffies(WLAN_TSF_SYNC_GET_TIMEOUT));
+	if (ret == 0)
+		return -ETIMEDOUT;
+
+	hdd_indicate_tsf(adapter, tsf_op_resp, 3);
+	if (tsf_op_resp[0] != TSF_RETURN)
+		return -EINVAL;
+
+	*tsf = ((uint64_t)tsf_op_resp[2] << 32) | (uint64_t)tsf_op_resp[1];
+	return 0;
+}
+
 #ifdef WLAN_FEATURE_TSF_PTP
 int wlan_get_ts_info(struct net_device *dev, struct ethtool_ts_info *info)
 
