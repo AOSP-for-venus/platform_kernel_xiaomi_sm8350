@@ -714,7 +714,7 @@ WONDER_PREPARATION_ERROR:
 	return ret;
 }
 
-static void wonder_stop(struct ieee80211_hw *hw, bool suspended)
+static void wonder_stop(struct ieee80211_hw *hw)
 {
 	struct wonder_data *wonder = hw->priv;
 	/* This should turn off the hardware. */
@@ -723,7 +723,7 @@ static void wonder_stop(struct ieee80211_hw *hw, bool suspended)
 	wondertap_deinit(&wonder->wondertap_data);
 }
 
-static int wonder_config(struct ieee80211_hw *hw, int radio_idx, u32 changed)
+static int wonder_config(struct ieee80211_hw *hw, u32 changed)
 {
 	/* Handle configuration changes (rate control, power, etc.) */
 	pr_debug(DRV_NAME ": HW configuration changed (0x%X).\n", changed);
@@ -1008,15 +1008,15 @@ static void wonder_sta_update_worker(struct work_struct *work)
 }
 
 static int wonder_update_station_state(struct ieee80211_hw *hw,
-			struct ieee80211_link_sta *link_sta,
+			struct ieee80211_sta *sta,
 			enum wondertap_station_action action)
 {
 	struct wonder_sta_update_work *swork;
-	struct ieee80211_sta *sta = link_sta->sta;
+	struct ieee80211_link_sta *link_sta = &sta->deflink;
 	struct wonder_data *wonder = hw->priv;
 	struct wondertap_station_info *sta_info;
 
-	swork = kzalloc_obj(*swork, GFP_ATOMIC);
+	swork = kzalloc(sizeof(*swork), GFP_ATOMIC);
 	if (!swork)
 		return -ENOMEM;
 
@@ -1053,22 +1053,22 @@ static int wonder_update_station_state(struct ieee80211_hw *hw,
 static int wonder_sta_add(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			struct ieee80211_sta *sta)
 {
-	wonder_update_station_state(hw, &sta->deflink, WONDERTAP_STATION_STATE_NEW);
+	wonder_update_station_state(hw, sta, WONDERTAP_STATION_STATE_NEW);
 	return 0;
 }
 
-static void wonder_link_sta_rc_update(struct ieee80211_hw *hw,
-				      struct ieee80211_vif *vif,
-				      struct ieee80211_link_sta *link_sta,
-				      u32 changed)
+static void wonder_sta_rc_update(struct ieee80211_hw *hw,
+			      struct ieee80211_vif *vif,
+			      struct ieee80211_sta *sta,
+			      u32 changed)
 {
-	wonder_update_station_state(hw, link_sta, WONDERTAP_STATION_STATE_UPDATE);
+	wonder_update_station_state(hw, sta, WONDERTAP_STATION_STATE_UPDATE);
 }
 
 static int wonder_sta_remove(struct ieee80211_hw *hw, struct ieee80211_vif *vif,
 			struct ieee80211_sta *sta)
 {
-	wonder_update_station_state(hw, &sta->deflink, WONDERTAP_STATION_STATE_DEL);
+	wonder_update_station_state(hw, sta, WONDERTAP_STATION_STATE_DEL);
 	return 0;
 }
 
@@ -1111,17 +1111,13 @@ static const struct ieee80211_ops wonder_mac80211_ops = {
 	.stop_nan           = wonder_stop_nan,
 	.add_nan_func       = wonder_add_nan_func,
 	.del_nan_func       = wonder_del_nan_func,
-	/* --- Mandatory Channel Context Hooks (emulated path) --- */
-	.add_chanctx        = ieee80211_emulate_add_chanctx,
-	.remove_chanctx     = ieee80211_emulate_remove_chanctx,
-	.change_chanctx     = ieee80211_emulate_change_chanctx,
 	/* --- AMSDU Support -- */
 	.can_aggregate_in_amsdu = wonder_amsdu_sanity,
 	.ampdu_action = wonder_ampdu_action,
 	/* --- Station Support --- */
 	.sta_add = wonder_sta_add,
 	.sta_remove = wonder_sta_remove,
-	.link_sta_rc_update = wonder_link_sta_rc_update,
+	.sta_rc_update = wonder_sta_rc_update,
 	.sta_rate_tbl_update = wonder_sta_rate_tbl_update,
 	/* -- ADHOC Support -- */
 	.tx_last_beacon = wonder_tx_last_beacon,
