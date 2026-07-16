@@ -125,6 +125,15 @@ int wlan_hdd_cfg80211_handle_tsf_cmd(struct wiphy *wiphy,
 
 int hdd_get_tsf_cb(void *pcb_cxt, struct stsf *ptsf);
 
+/**
+ * hdd_tsf_get_sync() - synchronously capture and return the current TSF
+ * @adapter: adapter to query
+ * @tsf: output, the captured 64-bit TSF value
+ *
+ * Return: 0 on success, negative errno on failure/timeout
+ */
+int hdd_tsf_get_sync(struct hdd_adapter *adapter, uint64_t *tsf);
+
 extern const struct nla_policy tsf_policy[QCA_WLAN_VENDOR_ATTR_TSF_MAX + 1];
 
 #define FEATURE_HANDLE_TSF_VENDOR_COMMANDS \
@@ -166,6 +175,11 @@ static inline int wlan_hdd_cfg80211_handle_tsf_cmd(struct wiphy *wiphy,
 	return -ENOTSUPP;
 }
 static inline int hdd_get_tsf_cb(void *pcb_cxt, struct stsf *ptsf)
+{
+	return -ENOTSUPP;
+}
+
+static inline int hdd_tsf_get_sync(struct hdd_adapter *adapter, uint64_t *tsf)
 {
 	return -ENOTSUPP;
 }

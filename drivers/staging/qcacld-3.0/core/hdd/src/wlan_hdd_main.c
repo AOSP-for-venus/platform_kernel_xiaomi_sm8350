@@ -202,6 +202,7 @@
 #include <net/pkt_cls.h>
 #endif
 #include <linux/bitfield.h>
+#include "wlan_hdd_wondertap.h"
 
 #ifdef MODULE
 #ifdef WLAN_WEAR_CHIPSET
@@ -17818,6 +17819,12 @@ int hdd_driver_load(void)
 		goto pld_deinit;
 	}
 
+	errno = hdd_wondertap_register();
+	if (errno) {
+		hdd_err("wondertap: registration failed, continuing without it; errno:%d",
+		errno);
+	}
+
 	hdd_loaded = true;
 	hdd_debug("%s: driver loaded", WLAN_MODULE_NAME);
 
@@ -17909,6 +17916,8 @@ void hdd_driver_unload(void)
 	 * call to pld_remove which in itself is a psoc transaction
 	 */
 	osif_driver_sync_trans_stop(driver_sync);
+
+	hdd_wondertap_unregister();
 
 	/* trigger SoC remove */
 	wlan_hdd_unregister_driver();

@@ -441,6 +441,10 @@ ifeq ($(CONFIG_WLAN_CFR_ENABLE), y)
 HDD_OBJS += $(HDD_SRC_DIR)/wlan_hdd_cfr.o
 endif
 
+ifeq ($(CONFIG_WONDER_SUPPORT), y)
+HDD_OBJS += $(HDD_SRC_DIR)/wlan_hdd_wondertap.o
+endif
+
 $(call add-wlan-objs,hdd,$(HDD_OBJS))
 
 ###### OSIF_SYNC ########
@@ -3884,6 +3888,11 @@ CMN_IDS = $(shell cd "$(WLAN_COMMON_INC)" && \
 		paste -sd "," -)
 BUILD_TAG = "cld:$(CLD_IDS); cmn:$(CMN_IDS); dev:$(DEVNAME)"
 ccflags-y += -DBUILD_TAG=\"$(BUILD_TAG)\"
+endif
+
+ifeq ($(CONFIG_WONDER_SUPPORT), y)
+WONDER_DIR=$(srctree)/drivers/android/wonder
+ccflags-y += -I$(WONDER_DIR)/include -DWONDERTAP
 endif
 
 # Module information used by KBuild framework
