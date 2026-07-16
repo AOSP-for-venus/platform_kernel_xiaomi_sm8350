@@ -216,8 +216,6 @@ int wonder_txs_enqueue(struct ieee80211_sta *sta, struct sk_buff *skb)
 	info->status.ack_signal = -30;
 	info->status.ampdu_len = 1;
 	info->status.ampdu_ack_len = 1;
-	info->status.flags |=
-			IEEE80211_TX_STATUS_ACK_SIGNAL_VALID;
 	info->status.rates[0].count = 1;
 	info->status.rates[0].idx = rate->idx;
 	info->status.rates[0].flags = rate->flags;
@@ -273,8 +271,6 @@ void wonder_txs_direct_report(struct ieee80211_hw *hw, struct ieee80211_sta *sta
 	info->status.ack_signal = -30;
 	info->status.ampdu_len = 1;
 	info->status.ampdu_ack_len = 1;
-	info->status.flags |=
-			IEEE80211_TX_STATUS_ACK_SIGNAL_VALID;
 	info->status.rates[0].count = 1;
 	info->status.rates[0].idx = rate->idx;
 	info->status.rates[0].flags = rate->flags;

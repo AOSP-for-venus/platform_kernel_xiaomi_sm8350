@@ -873,7 +873,7 @@ static int wonder_force_set_mac(struct wonder_data *wonder, struct ieee80211_vif
 
 	eth_hw_addr_set(vdev, (void *)pdev->dev_addr);
 	memcpy(vif->addr, (void *)pdev->dev_addr, ETH_ALEN);
-	ether_addr_copy(vif->bss_conf.addr, vif->addr);
+	vif->bss_conf.bssid = vif->addr;
 	pr_debug("Set physical mac address %pM to virtual interface %s\n",
 			 pdev->dev_addr, vdev->name);
 	return 0;
@@ -1012,7 +1012,6 @@ static int wonder_update_station_state(struct ieee80211_hw *hw,
 			enum wondertap_station_action action)
 {
 	struct wonder_sta_update_work *swork;
-	struct ieee80211_link_sta *link_sta = &sta->deflink;
 	struct wonder_data *wonder = hw->priv;
 	struct wondertap_station_info *sta_info;
 
@@ -1027,22 +1026,22 @@ static int wonder_update_station_state(struct ieee80211_hw *hw,
 	sta_info->aid = sta->aid;
 	memcpy(sta_info->mac, sta->addr, ETH_ALEN);
 
-	if (link_sta->ht_cap.ht_supported) {
-		sta_info->ht_capa.cap_info = link_sta->ht_cap.cap;
+	if (sta->ht_cap.ht_supported) {
+		sta_info->ht_capa.cap_info = sta->ht_cap.cap;
 		sta_info->ht_capa.ampdu_params_info = 0x1f;
-		sta_info->ht_capa.mcs = link_sta->ht_cap.mcs;
+		sta_info->ht_capa.mcs = sta->ht_cap.mcs;
 		sta_info->capability_mask |= BIT(WONDERTAP_STATION_CAP_HT);
 	}
 
-	if (link_sta->vht_cap.vht_supported) {
-		sta_info->vht_capa.vht_cap_info = link_sta->vht_cap.cap;
-		sta_info->vht_capa.supp_mcs = link_sta->vht_cap.vht_mcs;
+	if (sta->vht_cap.vht_supported) {
+		sta_info->vht_capa.vht_cap_info = sta->vht_cap.cap;
+		sta_info->vht_capa.supp_mcs = sta->vht_cap.vht_mcs;
 		sta_info->capability_mask |= BIT(WONDERTAP_STATION_CAP_VHT);
 	}
 
-	if (link_sta->he_cap.has_he) {
-		sta_info->he_capa = link_sta->he_cap.he_cap_elem;
-		sta_info->he_capa_len = sizeof(link_sta->he_cap.he_cap_elem);
+	if (sta->he_cap.has_he) {
+		sta_info->he_capa = sta->he_cap.he_cap_elem;
+		sta_info->he_capa_len = sizeof(sta->he_cap.he_cap_elem);
 		sta_info->capability_mask |= BIT(WONDERTAP_STATION_CAP_HE);
 	}
 

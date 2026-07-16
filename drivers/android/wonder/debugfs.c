@@ -11,7 +11,6 @@
 #include <linux/netdevice.h>
 #include <linux/uaccess.h>
 #include <linux/etherdevice.h>
-#include <linux/hex.h>
 #include <linux/seq_file.h>
 
 #include "core.h"

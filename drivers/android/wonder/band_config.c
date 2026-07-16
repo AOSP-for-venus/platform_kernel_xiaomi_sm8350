@@ -74,7 +74,7 @@ struct ieee80211_supported_band wonder_band_2ghz = {
 	},
 	/* HE (802.11ax) Capabilities (nested attribute) */
 	.n_iftype_data = 1,
-	.iftype_data = (const void __iftd __force *)wonder_sband_iftype_data_2ghz,
+	.iftype_data = wonder_sband_iftype_data_2ghz,
 };
 
 /* --- Hardware Capability Definition (IEEE 802.11 bands and channels) --- */
@@ -217,5 +217,5 @@ struct ieee80211_supported_band wonder_band_5ghz = {
 
 	/* HE (802.11ax) Capabilities (nested attribute) */
 	.n_iftype_data = 1,
-	.iftype_data = (const void __iftd __force *)wonder_sband_iftype_data_5ghz,
+	.iftype_data = wonder_sband_iftype_data_5ghz,
 };
