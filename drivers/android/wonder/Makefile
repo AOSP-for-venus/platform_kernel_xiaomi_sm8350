@@ -2,7 +2,7 @@
 
 ccflags-y := -DDYNAMIC_DEBUG_MODULE
 
-obj-$(CONFIG_ANDROID_WONDER) += wonder.o
+obj-m += wonder.o
 wonder-objs := \
 	main.o			\
 	mac80211.o		\

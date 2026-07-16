@@ -36,14 +36,15 @@ static inline void wonder_get_regulator_domain(struct ieee80211_hw *hw)
 	rcu_read_lock();
 	regdomain = get_wiphy_regdom(hw->wiphy);
 	if (regdomain) {
-		pr_debug("Current regdomain: %c%c (DFS region: %d)\n",
+		wonder_info("Current regdomain: %c%c (DFS region: %d)\n",
 				regdomain->alpha2[0], regdomain->alpha2[1],
 				regdomain->dfs_region);
-		pr_debug("n_reg_rules: %u\n", regdomain->n_reg_rules);
+		wonder_info("n_reg_rules: %u\n", regdomain->n_reg_rules);
 		for (i = 0; i < regdomain->n_reg_rules; i++) {
 			const struct ieee80211_reg_rule *rule = &regdomain->reg_rules[i];
 
-			pr_debug("Rule %d: %u KHz - %u KHz (max_bw: %u KHz), max_eirp: %u mBm, flags: 0x%x\n",
+			wonder_info("Rule %d: %u KHz - %u KHz (max_bw: %u KHz), max_eirp: %u mBm,"
+					" flags: 0x%x\n",
 					i, rule->freq_range.start_freq_khz,
 					rule->freq_range.end_freq_khz,
 					rule->freq_range.max_bandwidth_khz,

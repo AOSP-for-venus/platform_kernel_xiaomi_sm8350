@@ -1,12 +1,6 @@
-// SPDX-License-Identifier: GPL-2.0
 #include <linux/nl80211.h>
 #include <linux/ieee80211.h>
 #include <net/cfg80211.h>
-#include <linux/version.h>
-
-#include "mac80211.h"
-
-
 
 /* --- Hardware Capability Definition (IEEE 802.11 bands and channels) --- */
 static struct ieee80211_channel wonder_channels_2ghz[] = {
@@ -40,15 +34,14 @@ static const struct ieee80211_sband_iftype_data wonder_sband_iftype_data_2ghz[] 
 		.he_cap = {
 			.has_he = true,
 			.he_cap_elem = {
-				/* MAC Capabilities */
-				.mac_cap_info[0] = IEEE80211_HE_MAC_CAP0_TWT_RES,
-				.mac_cap_info[1] = 0,
+            /* MAC Capabilities */
+            .mac_cap_info[0] = cpu_to_le16(IEEE80211_HE_MAC_CAP0_TWT_RES),
+            .mac_cap_info[1] = cpu_to_le16(0),
 
-				/* PHY Capabilities: Supports 20MHz and 40MHz */
-				.phy_cap_info[0] =
-					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_IN_2G,
-				.phy_cap_info[1] = 0,
-			},
+            /* PHY Capabilities: Supports 20MHz and 40MHz */
+            .phy_cap_info[0] = cpu_to_le32(IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_IN_2G),
+            .phy_cap_info[1] = cpu_to_le32(0),
+            },
 		},
 	},
 };
@@ -74,7 +67,7 @@ struct ieee80211_supported_band wonder_band_2ghz = {
 	},
 	/* HE (802.11ax) Capabilities (nested attribute) */
 	.n_iftype_data = 1,
-	.iftype_data = (const void __iftd __force *)wonder_sband_iftype_data_2ghz,
+	.iftype_data = wonder_sband_iftype_data_2ghz,
 };
 
 /* --- Hardware Capability Definition (IEEE 802.11 bands and channels) --- */
@@ -150,20 +143,19 @@ static struct ieee80211_rate wonder_rates_5ghz[] = {
 	{ .bitrate = 540, .flags = 0 }, /* 54 Mbps */
 };
 
-static struct ieee80211_sband_iftype_data wonder_sband_iftype_data_5ghz[] = {
+static const struct ieee80211_sband_iftype_data wonder_sband_iftype_data_5ghz[] = {
 	{
 		.types_mask = BIT(NL80211_IFTYPE_ADHOC),
 		.he_cap = {
 			.has_he = true,
 			.he_cap_elem = {
-				.mac_cap_info[0] = IEEE80211_HE_MAC_CAP0_TWT_RES,
-				.mac_cap_info[1] = 0,
+                .mac_cap_info[0] = cpu_to_le16(IEEE80211_HE_MAC_CAP0_TWT_RES),
+                .mac_cap_info[1] = cpu_to_le16(0),
 
-				/* PHY Capabilities: Supports up to 80 MHz in 5 GHz */
-				.phy_cap_info[0] =
-					IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G,
-				.phy_cap_info[1] = 0,
-			},
+                /* PHY Capabilities: Supports up to 80 MHz in 5 GHz */
+                .phy_cap_info[0] = cpu_to_le32(IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G),
+                .phy_cap_info[1] = cpu_to_le32(0),
+            },
 		},
 	},
 };
@@ -190,7 +182,7 @@ struct ieee80211_supported_band wonder_band_5ghz = {
 
 	/* VHT Capabilities */
 	.vht_cap.vht_supported = true,
-	.vht_cap.cap = IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_7991 |
+	.vht_cap.cap = IEEE80211_VHT_CAP_MAX_MPDU_LENGTH_11454 |
 					IEEE80211_VHT_CAP_SHORT_GI_80 |
 					IEEE80211_VHT_CAP_RXSTBC_1 |
 					IEEE80211_VHT_CAP_SU_BEAMFORMER_CAPABLE,
@@ -217,5 +209,5 @@ struct ieee80211_supported_band wonder_band_5ghz = {
 
 	/* HE (802.11ax) Capabilities (nested attribute) */
 	.n_iftype_data = 1,
-	.iftype_data = (const void __iftd __force *)wonder_sband_iftype_data_5ghz,
+	.iftype_data = wonder_sband_iftype_data_5ghz,
 };

@@ -10,6 +10,7 @@
 
 #include "mac80211_txs.h"
 #include <linux/vmalloc.h>
+#include <linux/version.h>
 
 /**
  * g_txs_queue - Global instance of the TX status queue.
@@ -162,16 +163,16 @@ int wonder_txs_queue_init(void)
 	ts->write = 0;
 	ts->desc_sz = sizeof(struct ieee80211_tx_status);
 	ts->base = vzalloc(ts->desc_sz * ts->len);
-	if (!ts->base)
+	if (!ts->base) {
 		return -ENOMEM;
-
+	}
 	ts->tx_info = vzalloc(sizeof(struct ieee80211_tx_info) * ts->len);
-	if (!ts->tx_info)
+	if (!ts->tx_info) {
 		return -ENOMEM;
-
-	for (i = 0; i < ts->len; i++)
+	}
+	for (i = 0; i < ts->len; i++) {
 		ts->base[i].info = &ts->tx_info[i];
-
+	}
 	return 0;
 }
 
@@ -181,13 +182,12 @@ int wonder_txs_queue_init(void)
 void wonder_txs_queue_exit(void)
 {
 	struct txs_queue *ts = get_txs_queue();
-
-	if (ts->base)
+	if (ts->base) {
 		vfree(ts->base);
-
-	if (ts->tx_info)
+	}
+	if (ts->tx_info) {
 		vfree(ts->tx_info);
-
+	}
 	memset(ts, 0, sizeof(*ts));
 }
 
@@ -208,16 +208,19 @@ int wonder_txs_enqueue(struct ieee80211_sta *sta, struct sk_buff *skb)
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
 	struct ieee80211_tx_rate *rate = &info->control.rates[0];
 
-	if (status == NULL)
+	if (status == NULL) {
 		return -ENOBUFS;
+	}
 	/* assign tx_info */
 	info = status->info;
 	info->flags = IEEE80211_TX_STAT_ACK;
 	info->status.ack_signal = -30;
 	info->status.ampdu_len = 1;
 	info->status.ampdu_ack_len = 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
 	info->status.flags |=
 			IEEE80211_TX_STATUS_ACK_SIGNAL_VALID;
+#endif
 	info->status.rates[0].count = 1;
 	info->status.rates[0].idx = rate->idx;
 	info->status.rates[0].flags = rate->flags;
@@ -241,8 +244,9 @@ int wonder_txs_dequeue(struct ieee80211_hw *hw)
 	int cnt = queue_get_read_count(ts);
 	int i;
 
-	if (!cnt)
+	if (!cnt) {
 		return 0;
+	}
 	for (i = 0 ; i < cnt; i++) {
 		status = (struct ieee80211_tx_status *)queue_get_read_base(ts);
 		ieee80211_tx_status_ext(hw, status);
@@ -273,8 +277,10 @@ void wonder_txs_direct_report(struct ieee80211_hw *hw, struct ieee80211_sta *sta
 	info->status.ack_signal = -30;
 	info->status.ampdu_len = 1;
 	info->status.ampdu_ack_len = 1;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 18, 0)
 	info->status.flags |=
 			IEEE80211_TX_STATUS_ACK_SIGNAL_VALID;
+#endif
 	info->status.rates[0].count = 1;
 	info->status.rates[0].idx = rate->idx;
 	info->status.rates[0].flags = rate->flags;

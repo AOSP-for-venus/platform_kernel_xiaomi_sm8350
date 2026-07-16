@@ -1,17 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0 */
-
 #ifndef __WONDERTAP_INTERNAL_H__
 #define __WONDERTAP_INTERNAL_H__
 
-#include <linux/android/wondertap.h>
+#include "include/wonder/wondertap.h"
 
 enum wondertap_state {
-	WONDERTAP_STATE_DOWN,
-	WONDERTAP_STATE_UP,
+    WONDERTAP_STATE_DOWN,
+    WONDERTAP_STATE_UP,
 };
-
-#define WONDER_INIT_RETRY_CNT 5
-#define WONDER_INIT_RETRY_WAIT 400
 
 /* Maximum MCS index supported. */
 #define WONDERTAP_RA_MAX_MCS 7
@@ -28,13 +24,7 @@ enum wondertap_state {
 #define WONDERTAP_CACHE_TX_RATE_SET      (1 << 1)
 #define WONDERTAP_CACHE_BSSID_SET        (1 << 2)
 #define WONDERTAP_CACHE_COUNTRY_CODE_SET (1 << 3)
-
-struct wonder_sta_update_work {
-	struct work_struct work;
-	struct wonder_data *wonder;
-	struct wondertap_station_info sta_info;
-	enum wondertap_station_action action;
-};
+#define WONDERTAP_CACHE_CHANNEL_SCHEDULE_SET (1 << 4)
 
 struct wondertap_data {
 	void *vendor_handle;
@@ -46,15 +36,11 @@ struct wondertap_data {
 	struct wondertap_frame_filter_params cached_frame_filter;
 	struct wondertap_fixed_tx_rate_params cached_tx_rate;
 	struct wondertap_capability cap;
-	struct wondertap_init_params init_params;
 	struct channel_schedule_request cached_channel_schedule;
 	u8 cached_bssid[ETH_ALEN];
 	char cached_country_code[3];
 	enum wondertap_ver ver;
-	enum wondertap_ver wifi_ver;
 	struct device_node *wlan_node;
-	/* MAC address for station query via debugfs */
-	u8 query_mac_addr[ETH_ALEN];
 	const struct wondertap_ops *wonder_ops;
 };
 
@@ -80,7 +66,8 @@ static inline void wondertap_prep(struct wondertap_data *wondertap)
  * init() callback to allocate and prepare the wondertap0 interface.
  *
  * @param wondertap A pointer to the wondertap instance data.
- * @param params A pointer to the wondertap initial parameters.
+ * @param params A pointer to the initialization parameters required by the vendor
+ * driver.
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
@@ -108,8 +95,7 @@ void wondertap_deinit(struct wondertap_data *wondertap);
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
-int wondertap_set_freq(struct wondertap_data *wondertap,
-		       const struct wondertap_set_freq_params *params);
+int wondertap_set_freq(struct wondertap_data *wondertap, const struct wondertap_set_freq_params *params);
 
 /**
  * @brief Configures a specific packet filter.
@@ -128,9 +114,8 @@ int wondertap_set_freq(struct wondertap_data *wondertap,
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
-int wondertap_set_filter(struct wondertap_data *wondertap,
-			 enum wondertap_filter_type filter_type,
-			 const void *params);
+int wondertap_set_filter(struct wondertap_data *wondertap, enum wondertap_filter_type filter_type,
+                    const void *params);
 
 /**
  * @brief Sets a fixed transmission rate for the hardware.
@@ -143,8 +128,7 @@ int wondertap_set_filter(struct wondertap_data *wondertap,
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
-int wondertap_set_fixed_tx_rate(struct wondertap_data *wondertap,
-				const struct wondertap_fixed_tx_rate_params *params);
+int wondertap_set_fixed_tx_rate(struct wondertap_data *wondertap, const struct wondertap_fixed_tx_rate_params *params);
 
 /**
  * @brief Configures a mask of permitted transmission rates.
@@ -155,8 +139,7 @@ int wondertap_set_fixed_tx_rate(struct wondertap_data *wondertap,
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
-int wondertap_set_tx_rate_mask(struct wondertap_data *wondertap,
-			       const struct wondertap_tx_rate_mask_params *params);
+int wondertap_set_tx_rate_mask(struct wondertap_data *wondertap, const struct wondertap_tx_rate_mask_params *params);
 
 /**
  * @brief Configures the regulatory domain for the Wi-Fi hardware.
@@ -168,7 +151,7 @@ int wondertap_set_tx_rate_mask(struct wondertap_data *wondertap,
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
-int wondertap_set_reg(struct wondertap_data *wondertap, const char *country_code);
+int wondertap_set_reg(struct wondertap_data *wondertap, const char* country_code);
 
 /**
  * @brief Retrieves supported vendor features.
@@ -182,8 +165,7 @@ int wondertap_set_reg(struct wondertap_data *wondertap, const char *country_code
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
-int wondertap_get_capabilities(struct wondertap_data *wondertap,
-			       struct wondertap_capability *capabilities);
+int wondertap_get_capabilities(struct wondertap_data *wondertap, struct wondertap_capability *capabilities);
 
 /**
  * @brief Retrieves the MAC address.
@@ -195,8 +177,7 @@ int wondertap_get_capabilities(struct wondertap_data *wondertap,
  *
  * Return: 0 on success, or a negative errno code on failure.
  */
-int wondertap_get_interface_mac_address(struct wondertap_data *wondertap,
-					u8 *mac_addr);
+int wondertap_get_interface_mac_address(struct wondertap_data *wondertap, u8 (*mac_addr)[ETH_ALEN]);
 
 /**
  * @brief Sets the BSSID filter for the wondertap interface.
@@ -229,32 +210,6 @@ int wondertap_channel_schedule_request(struct wondertap_data *wondertap,
  * @return 0 on success, or a negative error code on failure.
  */
 int wondertap_get_mac_tsf(struct wondertap_data *wondertap, u32 *mac_tsf);
-
-
-/**
- * @brief Retrieves the channel status report.
- *
- * @param wondertap A pointer to the wondertap instance data.
- * @param report A pointer to the channel status report structure to be
- * populated with the current hopping status and channel statistics.
- *
- * @return 0 on success, or a negative error code on failure.
- */
-int wondertap_get_channel_status_report(struct wondertap_data *wondertap,
-				    struct wondertap_channel_status_report *report);
-
-/**
- * @brief Adds, updates, or removes station information in the vendor driver.
- *
- * @param wondertap A pointer to the wondertap instance data.
- * @param action The action to perform on the station (NEW, UPDATE, or DEL).
- * @param info A pointer to the station information structure.
- *
- * @return 0 on success, or a negative error code on failure.
- */
-int wondertap_set_station_info(struct wondertap_data *wondertap,
-		const enum wondertap_station_action action,
-		struct wondertap_station_info *info);
 
 /**
  * @brief Register a vendor's wondertap operations.

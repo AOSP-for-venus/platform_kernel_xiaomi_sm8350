@@ -6,13 +6,13 @@
  * from the physical network device, such as it going down, and triggers
  * a re-initialization of the mac80211 features to recover.
  */
-#define pr_fmt(fmt) "[wonder][ssr] " fmt
 #define LOG_MODULE_NAME "ssr"
 
 #include <linux/netdevice.h>
 
 #include "core.h"
 #include "mac80211.h"
+#include "wonder_log.h"
 #include "ssr.h"
 
 static void wonder_pdev_down_work_handler(struct work_struct *work)
@@ -33,9 +33,9 @@ static int wonder_netdev_event(struct notifier_block *nb, unsigned long event, v
 
 	switch (event) {
 	case NETDEV_DOWN:
-		pr_debug("Physical device %s is down. Triggering recovery.\n", dev->name);
+		wonder_info("Physical device %s is down. Triggering recovery.\n", dev->name);
 		netif_stop_queue(wonder->vdev);
-		queue_work(wonder->workqueue, &wonder->pdev_down_work);
+		schedule_work(&wonder->pdev_down_work);
 		break;
 	default:
 		break;

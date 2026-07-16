@@ -26,4 +26,5 @@ int wonder_txs_dequeue(struct ieee80211_hw *hw);
 void wonder_txs_direct_report(struct ieee80211_hw *hw, struct ieee80211_sta *sta,
 		struct sk_buff *skb);
 
+
 #endif /* __WONDER_MAC80211_TXS_H__ */
