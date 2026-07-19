@@ -47,8 +47,10 @@
 #include <linux/component.h>
 #include <linux/of.h>
 #include <linux/version.h>
-#include <wonder/wondertap.h>
+#include <linux/rtnetlink.h>
+#include <linux/workqueue.h>
 #include <net/cfg80211.h>
+#include <wonder/wondertap.h>
 
 #include "wlan_hdd_main.h"
 #include "wlan_hdd_regulatory.h"
@@ -98,6 +100,31 @@ struct hdd_wondertap_state {
 };
 
 static struct hdd_wondertap_state g_wondertap;
+
+/*
+ * Deferred-init plumbing. See the crash analysis on hdd_wondertap_init()
+ * below for why this exists -- calling wlan_hdd_add_monitor_check()
+ * (which calls all the way down to register_netdevice()) synchronously
+ * from inside wondertap_init()'s call chain crashes, because that call
+ * chain is itself nested inside wonder0's own ieee80211_open() ->
+ * __dev_open() sequence. register_netdevice() doesn't tolerate being
+ * invoked reentrantly from within another netdevice's own open() path --
+ * confirmed by an actual panic trace, not inferred. The real fix is to
+ * get out of that call chain entirely before doing this work, hence the
+ * workqueue.
+ *
+ * params isn't guaranteed to remain valid after init() returns (it may be
+ * stack-allocated on wonder's side), so the fields we need are copied out
+ * before scheduling, not referenced by pointer.
+ */
+struct hdd_wondertap_deferred_init {
+	struct work_struct work;
+	uint8_t country_code[3];
+	struct wondertap_set_freq_params channel;
+	struct wondertap_fixed_tx_rate_params tx_rate;
+};
+
+static struct hdd_wondertap_deferred_init g_wondertap_deferred;
 
 /* --------------------------------------------------------------------- *
  * wondertap_ops callbacks
@@ -463,16 +490,37 @@ static int hdd_wondertap_channel_schedule_request(void *handle,
  * it's still actionable.
  */
 
-static int hdd_wondertap_init(void **handle,
-			       const struct wondertap_init_params *params)
+/*
+ * hdd_wondertap_deferred_init_work() - the actual work, run outside the
+ * nested call chain that crashed.
+ *
+ * By the time this runs (scheduled on the system workqueue, executed on
+ * a plain kernel worker thread), wonder0's ieee80211_open()/__dev_open()
+ * has long since returned and released whatever it held -- we are not
+ * nested inside anyone else's netdevice-open call chain anymore, so
+ * register_netdevice() (reached via wlan_hdd_add_monitor_check() below)
+ * is being called the normal, non-reentrant way it expects.
+ *
+ * rtnl_held is FALSE here, correctly -- this is the opposite of the
+ * rtnl_held=true fix earlier in this file, and that's not a
+ * contradiction: that fix was for the synchronous call path (genuinely
+ * already holding RTNL, confirmed via the rtnl_is_locked=1 print). A
+ * workqueue worker is a fresh thread with nothing inherited -- it must
+ * acquire RTNL itself. If the original netlink caller (rtnl_setlink's
+ * thread) is still mid-transaction and holding RTNL at this exact moment,
+ * this will simply block on rtnl_lock() until it's released -- an
+ * ordinary lock wait, not a deadlock, since nothing on that side is
+ * waiting on this workqueue job to proceed.
+ */
+static void hdd_wondertap_deferred_init_work(struct work_struct *work)
 {
 	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
 	int errno;
 
-	if (!hdd_ctx)
-		return -ENODEV;
-
-	*handle = hdd_ctx;
+	if (!hdd_ctx) {
+		hdd_err("wondertap: deferred init: hdd_ctx unavailable");
+		return;
+	}
 
 	if (!g_wondertap.mon_adapter) {
 		errno = wlan_hdd_add_monitor_check(hdd_ctx,
@@ -481,30 +529,84 @@ static int hdd_wondertap_init(void **handle,
 		if (errno) {
 			hdd_err("wondertap: failed to create monitor adapter: %d",
 				errno);
-			return errno;
+			return;
 		}
 	}
 
-	/* country_code isn't null-terminated per the wondertap ABI (3 bytes,
-	 * last is a padding/reserved byte in some versions) -- hdd_reg_set_country
-	 * expects a C string, so make sure it's terminated before use.
-	 */
-	((char *)params->country_code)[2] = '\0';
-	hdd_reg_set_country(hdd_ctx, (char *)params->country_code);
-
-	errno = hdd_wondertap_set_freq(hdd_ctx, &params->channel);
-	if (errno)
-		hdd_err("wondertap: initial set_freq failed: %d", errno);
+	((char *)g_wondertap_deferred.country_code)[2] = '\0';
+	hdd_reg_set_country(hdd_ctx, (char *)g_wondertap_deferred.country_code);
 
 	errno = hdd_start_adapter(g_wondertap.mon_adapter);
 	if (errno) {
 		hdd_err("wondertap: failed to start monitor adapter: %d", errno);
-		return errno;
+		return;
 	}
 
-	hdd_wondertap_set_fixed_tx_rate(hdd_ctx, &params->tx_rate);
+	errno = hdd_wondertap_set_freq(hdd_ctx, &g_wondertap_deferred.channel);
+	if (errno)
+		hdd_err("wondertap: initial set_freq failed: %d", errno);
+
+	hdd_wondertap_set_fixed_tx_rate(hdd_ctx, &g_wondertap_deferred.tx_rate);
 
 	g_wondertap.active = true;
+	hdd_debug("wondertap: deferred init complete");
+}
+
+/*
+ * hdd_wondertap_init() - real crash analyzed via an actual panic trace,
+ * not another inference this time.
+ *
+ * Full call stack that crashed:
+ *   rtnl_setlink -> do_setlink -> dev_change_flags -> __dev_open ->
+ *   ieee80211_open -> ieee80211_do_open -> drv_start -> wonder_start ->
+ *   wondertap_init -> hdd_wondertap_init -> wlan_hdd_add_monitor_check ->
+ *   hdd_open_adapter -> hdd_register_interface -> register_netdevice
+ *   [NULL pointer dereference here]
+ *
+ * i.e. something brings wonder0 up (an ip-link-style netlink request) ->
+ * mac80211 calls wonder's own .start vif op -> wonder synchronously calls
+ * into this function -> this function used to synchronously try to
+ * register a SECOND, brand-new netdevice (the monitor adapter) from
+ * inside that call chain. register_netdevice() doesn't tolerate that
+ * nesting and crashes deep in its own internals (not qcacld's code, not
+ * wonder's).
+ *
+ * rtnl_is_locked=1 at entry is confirmed (not guessed) via the print
+ * below, from the actual panic log -- that part of the earlier fix was
+ * correct. The new fix: do the actual netdevice-creating work on a
+ * workqueue instead of inline, so it runs after this whole call chain has
+ * unwound and released RTNL naturally, in a clean non-nested context.
+ * init() itself now just copies out what it needs and returns quickly
+ * without waiting for that work to finish -- see the tradeoffs noted in
+ * INTEGRATION_NOTES.md (this means init() reports success before the
+ * adapter actually exists; wonder's own cache-incoming-settings-until-active
+ * behavior, visible in your dmesg logs, tolerates repeated set_freq/
+ * set_fixed_tx_rate/set_reg calls, and hdd_wondertap_set_freq() /
+ * hdd_wondertap_set_fixed_tx_rate() already handle mon_adapter being NULL
+ * gracefully with -ENODEV rather than crashing, in case wonder replays
+ * those calls before the deferred work has finished).
+ */
+static int hdd_wondertap_init(void **handle,
+			       const struct wondertap_init_params *params)
+{
+	struct hdd_context *hdd_ctx = cds_get_context(QDF_MODULE_ID_HDD);
+
+	pr_info("wondertap: init() entered, rtnl_is_locked=%d\n",
+		rtnl_is_locked());
+
+	if (!hdd_ctx)
+		return -ENODEV;
+
+	*handle = hdd_ctx;
+
+	memcpy(g_wondertap_deferred.country_code, params->country_code,
+	       sizeof(g_wondertap_deferred.country_code));
+	g_wondertap_deferred.channel = params->channel;
+	g_wondertap_deferred.tx_rate = params->tx_rate;
+
+	INIT_WORK(&g_wondertap_deferred.work, hdd_wondertap_deferred_init_work);
+	schedule_work(&g_wondertap_deferred.work);
+
 	return 0;
 }
 
